@@ -9,5 +9,8 @@ G = [
     rule(E,[T]),
     rule(T,[ID]),
     ]
-inp = ['a','+','b']
+from pprint import pprint
+pprint( G )
+inp = InputStream( ['abcd'] )
 bt = BottomUp(G,inp,[],[])
+#bt.parse()
