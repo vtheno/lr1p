@@ -12,59 +12,66 @@ def mkID(keywords):
 IDK = type("IDK",(object,),{"__repr__":lambda self:"IDK"})()
 RejectErr = type("RejectErr",(Exception,),{"__repr__":lambda self:"RejectErr"})
 class rule(object):
-    def __init__(self,rule):
-        self.L = rule[0]
-        self.R = rule[1]
-        self.cur = 0
-        self.max = len(self.R)
-    def __repr__(self):
-        return "{} -> {}".format(repr(self.L),repr(self.R[0]) if len(self.R) == 1 else ''.join(map(lambda x:repr(x),self.R)))
-    def reset(self):
-        self.cur = 0
-    def end_of(self):
-        if self.cur == self.max:
-            return True
+    def __init__(self,L,R,cur=0):
+        self.L = L
+        self.R = R
+        self.cur = cur
+        self.max = len(R)
+    def next(self):
+        if self.cur < self.max :
+            return rule(self.L,self.R,self.cur + 1)
         else:
-            return False
-class Process (object):
-    def __init__(self,rules):
-        self.rules = rules
-    def first_find(self):
-        first = self.rules[1]
-        non_end = set([self.rules[0],first])
-        for r in self.rules[2:]:
-            if first.R.index(r.L) is 0:
-                non_end.add(r)
-        is_end = set(self.rules) - non_end
-        return (is_end , non_end)
-    def second_find(self):
-        Rs = set([])
-        Ls = set([l.L for l in self.rules[1:]])
-        for r in self.rules:
-            for t in r.R:
-                Rs.add( t ) if repr(t) != 'ID' and t not in Ls else Rs.add(IDK)
-        return (Ls,Rs)
+            raise EOFError
+    def end_of(self):
+        return self.cur == self.max
+    def __repr__(self):
+        dot = type('dot',(object,),{'__repr__':lambda self:'.'})()
+        tmp = self.R[0:self.cur] + [dot] + self.R[self.cur:]
+        return "{} -> {}".format(self.L, ' '.join([repr(x) for x in tmp]))
+    def inference(self,accept):
+        #tmp = self.next()
+        if self.end_of():
+            if self.L == accept:
+                return ('A',self.L)
+            return ('R',self.L)
+        else:
+            return ('S',self.R[self.cur])
 class BottomUp(object):
-    def __init__(self,G,I,action,goto):
-        tmp = G[0][0]
-        self.Rules = [(New(repr(tmp) + "'"),[tmp])] + G # Grammar
-        self.rules = [rule(r) for r in self.Rules]
-        self.process = Process(self.rules)
-        self.Input = I # InputSteam
+    def __init__(self,
+                 G : [(object,[object])],
+                 I : InputStream,
+                 action : [{object:object}],
+                 goto : [{object:object}] ):
+        tmp = G[0].L
+        r1 = rule(New("{}'".format(tmp)),[tmp])
+        self.Rules = [r1] + G
+        self.GeneratorItem( self.Rules, r1.L )
+        self.Input = I
         self.Stack = Stack()
         self.Stack.push( SHIFT(0) )
         self.action = action # [{}] table
         self.goto = goto     # [{}] table
-    def search_action(self):
-        # from the rule generate action table ???
-        for rule in self.rules:
-            print( rule )
-        is_end,non_end = self.process.first_find ()
-        goto,action = self.process.second_find ()
-        print( is_end,non_end , goto,action )
-        # wait
-    def search_goto(self):
-        pass
+    def infos(self):
+        ls = [r.L for r in self.Rules]
+        rs = set([EOF])
+        for r in self.Rules:
+            for x in r.R:
+                if repr(x) == 'ID':
+                    rs.add( IDK )
+                elif x not in ls:
+                    rs.add( x )
+        goto_header = set(ls)
+        action_header = rs
+        return action_header,goto_header
+    def GeneratorItem(self,rules,accept):
+        items = [rules]
+        tmp = rules
+        while tmp:
+            ttt = [i.inference(accept) for i in tmp]
+            print( "In :",tmp )
+            print( "Out:",ttt )
+            tmp = [i.next() for i in tmp if not i.end_of()]
+
     def get_action(self,state,token):
         tab = self.action[state]
         f = type('f',(object,),{})()
@@ -97,4 +104,5 @@ class BottomUp(object):
 
 __all__ = ["New","News",
            "mkID","IDK",
+           "rule",
            "BottomUp"]
