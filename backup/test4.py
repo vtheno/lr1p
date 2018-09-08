@@ -1,24 +1,27 @@
 #coding=utf-8
 from LR import *
 from lib import SHIFT,REDUCE,Reject,Accept,EOF,InputStream
-
-S,A,B = News("S","A","B")
-#keywords = ['+',]
-#ID = mkID(keywords)
+E,Int = News("E","Int")
 G = [
-    (S,[A,'c',B]),
-    (A,['a',A]),
-    (A,['a']),
-    (B,['b',B]),
-    (B,['b']),
+    rule(E,[E,'+',E]),
+    rule(E,[Int])
 ]
-"""
-S -> AcB
-A -> aA | a
-B -> bB | b
-"""
-action = [ ]
-goto = [ ]
-inp = [ ]
+action = [ 
+    {Int : SHIFT(3) , '+' : Reject , EOF : Reject , },
+    {Int : Reject , '+' : SHIFT(2) , EOF : Accept , },
+    {Int : SHIFT(4) , '+' : Reject , EOF : Reject , },
+    {Int : Reject , '+' : REDUCE(1)  , EOF : REDUCE(1) },
+    {Int : Reject , '+' : REDUCE(1) , EOF : REDUCE(1) },
+    {Int : Reject , '+' : REDUCE(0) , EOF : REDUCE(0) },
+]
+goto = [
+    {E : SHIFT(1) },
+    {E : Reject },
+    {E : SHIFT(5) },
+    {E : Reject },
+    {E : Reject },
+    {E : Reject },
+]
+inp = InputStream( [Int,'+',Int,'+',Int,'+',Int] )
 bt = BottomUp(G,inp,action,goto)
-print( bt.search_action() )
+print( bt.parse() )
