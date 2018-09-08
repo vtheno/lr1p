@@ -79,9 +79,10 @@ class Grammar(object):
         return list(set(out))
     def __repr__(self):
         return repr(self.rules)
-Id,E = newSymbols("Id","E")
-G = Grammar( (E,[E,'+',E]),
-             (E,['id']),)
+Id,E,T = newSymbols("Id","E","T")
+G = Grammar( (E,[T,'+',E]),
+             (E,[T]),
+             (T,['id']),)
 class ButtomUpParser(object):
     def __init__(self,grammar,inp):
         self.grammar = grammar
@@ -143,18 +144,34 @@ class ButtomUpParser(object):
         C = self.Closure_LR0( [self.grammar.first] )
         Items = [ C ]
         Todo = [ C ]
+        taginfos = [ ]
         while Todo:
             Si = Todo.pop()
             #print( self.grammar.alls )
+            taginfo = [ ]
             for X in self.grammar.alls:
                 t = self.Goto_LR0(Si,X)
                 if t and t not in Items:
-                    print( {X:t},Si )
+                    #print( {X:t},Si )
                     Items += [t]
                     Todo += [t]
+                    taginfo.append( {X : t} )
+            if taginfo:
+                taginfos +=[taginfo]
             #print( "s1:",x )
-        return Items
-
+        return Items,taginfos
+    def Construct_table(self):
+        self.action = [ ]
+        self.goto = [ ]
+        items,taginfos = self.Items_LR0()
+        for taginfo in taginfos:
+            print( taginfo )
+            temp = [ ]
+            for tag in taginfo:
+                for k,v in tag.items():
+                    temp += [{ k : items.index(v) }]
+            self.action += [ temp ]
+        print( "action:",self.action )
 b = ButtomUpParser(G,[])
 print( "--------------------" )
 print( G )
@@ -164,6 +181,9 @@ print( "--------------------" )
 #i1 = b.Closure_LR0( [ G.first ] )
 #print( i1 )
 #print( b.Goto_LR0(i1,'id') )
-items =  b.Items_LR0()
+items,_ =  b.Items_LR0()
 for i in range(len(items)):
     print( f"S{i}:",items[i] )
+print( "--------------------" )
+b.Construct_table()
+print( "--------------------" )
