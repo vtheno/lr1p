@@ -155,7 +155,7 @@ class ButtomUpParser(object):
                     #print( {X:t},Si )
                     Items += [t]
                     Todo += [t]
-                    taginfo.append( {X : t} )
+                    taginfo.append( {X : [Items.index(Si),'to',Items.index(t)]} )
             if taginfo:
                 taginfos +=[taginfo]
             #print( "s1:",x )
@@ -164,14 +164,17 @@ class ButtomUpParser(object):
         self.action = [ ]
         self.goto = [ ]
         items,taginfos = self.Items_LR0()
+        infos = [ ]
+        for item in items:
+            temp = [ ]
+            for c in item:
+                t = {items.index(item) : c.cur}
+                if t not in temp:
+                    temp += [t]
+            infos += [temp]
+            print( temp )
         for taginfo in taginfos:
             print( taginfo )
-            temp = [ ]
-            for tag in taginfo:
-                for k,v in tag.items():
-                    temp += [{ k : items.index(v) }]
-            self.action += [ temp ]
-        print( "action:",self.action )
 b = ButtomUpParser(G,[])
 print( "--------------------" )
 print( G )
