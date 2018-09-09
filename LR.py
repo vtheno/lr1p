@@ -1,6 +1,8 @@
 #coding=utf-8
 from util import *
 from collections import namedtuple
+# non-terminal is all_symbols
+# terminal is all_tokens
 rule = namedtuple('rule',['name','body'])
 item = namedtuple('item',['name','left','rest'])
 def item_repr(self):
@@ -32,7 +34,6 @@ class Grammar(object):
         self.all_tokens = self.all_token()
         self.alls = self.all_symbols + self.all_tokens
         self.alls = [i for i in self.alls if i!=self.first_rule.name]
-        print(self.alls )
     def all_symbol(self):
         out = [ ]
         for rule in self.rules:
@@ -45,13 +46,29 @@ class Grammar(object):
             L,R = rule
             out += [i for i in [L] + R if not type(i).__class__ is Symbol]
         return list(set(out))
+    def First(self,x):
+        #if x in self.all_tokens:
+        #    return [x]
+        #first =  [ ]
+        #lst = [body[0] for name,body in self.rules if name == x and name!=body[0]]
+        #for x in lst:
+        #    first.extend( self.First(x) )
+        #return list(set(first))
+        if x in self.all_tokens:
+            return [x]
+        f = []
+        for name,body in self.rules:
+            if name == x and body[0] != x:
+                fn = self.First(body[0])
+                f.extend(fn)
+        return list(set(f))
     def __repr__(self):
         return repr(self.rules)
 
 class LR(object):
     def __init__(self,G):
         self.Stack = Stack(256 * 256)
-        self.Stack.push( 0 )
+        self.Stack.push( SHIFT(0) )
         self.G = G
     def Closure(self,I : [item] ) -> [item] :
         assert type(I) is list,"Closure : [item] -> [item]"
@@ -112,21 +129,67 @@ class LR(object):
                         inp = it.left[:1][0]
                         i = self.G.rules.index( rule(it.name,
                                                      it.left + it.rest))
-                        #print( "it:",inp, it , i)
-                        table[index][EOF] = REDUCE(i)
+                        #print( self.G.all_tokens )
+                        for e in self.G.all_tokens:
+                            if table[index][e] == REJECT:
+                                table[index][e] = REDUCE(i)
+                            #table[index][EOF] = REDUCE(i)
         for i in items:
             print( 'i',i )
         for t in table:
             print( 't:',t )
-        return items
-E,T = newSymbols("E","T")
-
+        return table#items
+    def parse(self,inp):
+        self.table = self.Items()
+        self.inp = inp
+        while 1:
+            token = self.inp.current
+            state = (self.Stack.peek()).n
+            action = self.table[state][token]
+            print( token,action,self.Stack )
+            if isinstance(action,SHIFT):
+                si = action
+                self.Stack.push(token)
+                self.Stack.push(si)
+                self.inp.next()
+            elif isinstance(action,REDUCE):
+                rule_index = action.n
+                rule = self.G.rules[rule_index]
+                (A,body) = rule
+                length = len(body)
+                popn = self.Stack.popn( length + length )
+                state = self.Stack.peek()
+                self.Stack.push( A )
+                self.Stack.push( self.table[state.n][A] )
+            elif action == ACCEPT:
+                state,result = self.Stack.popn(2)
+                return result
+            else:
+                raise TypeError("{}".format(action))
+E,T,F = newSymbols("E","T","F")
+"""
+----------------------------------------
+E = T + E # this is right assoc
+  | T
+T = id
+----------------------------------------
+E = E + T # this is left assoc
+  | T
+T = id 
+----------------------------------------
+"""
 g = Grammar(
-    rule(E,[T,'+',E]),
+    rule(E,[E,'+',T]),
     rule(E,[T]),
     rule(T,['id']),
     )
 print( g.alls )
 lr = LR(g)
 #print( lr.Closure( [ item(g.first_rule.name,[],g.first_rule.body) ] ) )
-lr.Items()
+#print( g.First(g.first_rule.name) , g.Follow(g.first_rule.name) )
+#print( g.First(E) , g.Follow(E) )
+#print( g.First(T) , g.Follow(T) )
+out = lr.parse(InputStream(
+    ['id','+','id']
+))
+print( out )

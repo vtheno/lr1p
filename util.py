@@ -30,15 +30,30 @@ class ACTION(type):
     def __new__(cls,name,parents,attrs):
         attrs["__name__"] = name
         attrs["__init__"] = lambda self,n:setattr(self,'n',n)
-        attrs["__repr__"] = lambda self:"{}{}".format(self.__name__,getattr(self,"n"))
+        if "__repr__" not in attrs.keys():
+            attrs["__repr__"] = lambda self:"{}{}".format(self.__name__[0],getattr(self,"n"))
         return type.__new__(cls,name,parents,attrs)
 class SHIFT(metaclass=ACTION): pass
 class REDUCE(metaclass=ACTION): pass
 class ACCEPT(metaclass=ACTION): pass
-class REJECT(metaclass=ACTION): pass
+class REJECT(metaclass=ACTION):
+    def __repr__(self):
+        return "--"
 ACCEPT = ACCEPT(0)
 REJECT = REJECT(0)
-__all__ = ["Stack","StackOverflow",
+class InputStream(object):
+    slst : [str]
+    def __init__(self,string):
+        assert list(string) != [] ,"InputString Empty"
+        self.slst = list(string) + [EOF]
+        self.position = 0
+        self.current = self.slst[self.position]
+    def end_of(self):
+        return self.current == EOF
+    def next(self):
+        self.position += 1
+        self.current = self.slst[self.position]
+__all__ = ["Stack","StackOverflow","InputStream",
            "EOF",
            "ACTION",
            "ACCEPT","SHIFT","REDUCE","REJECT"]
