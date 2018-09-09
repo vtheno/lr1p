@@ -105,5 +105,3 @@ venv.bak/
 
 # emacs backup
 *~
-backup/
-LR0.py
