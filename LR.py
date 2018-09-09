@@ -134,10 +134,10 @@ class LR(object):
                             if table[index][e] == REJECT:
                                 table[index][e] = REDUCE(i)
                             #table[index][EOF] = REDUCE(i)
-        for i in items:
-            print( 'i',i )
-        for t in table:
-            print( 't:',t )
+        for index,i in enumerate(items):
+            print( f'i{index}',i )
+        for index,t in enumerate(table):
+            print( f't{index}:',t )
         return table#items
     def parse(self,inp):
         self.table = self.Items()
@@ -183,13 +183,25 @@ g = Grammar(
     rule(E,[T]),
     rule(T,['id']),
     )
-print( g.alls )
+g1 = Grammar(
+    rule(E,[T,'+',E]),
+    rule(E,[T]),
+    rule(T,['id']),
+    )
+g2 = Grammar(
+    rule(E,[E,'+',E]),
+    rule(E,['id']),
+    )
 lr = LR(g)
+#print( g.alls )
 #print( lr.Closure( [ item(g.first_rule.name,[],g.first_rule.body) ] ) )
 #print( g.First(g.first_rule.name) , g.Follow(g.first_rule.name) )
 #print( g.First(E) , g.Follow(E) )
 #print( g.First(T) , g.Follow(T) )
-out = lr.parse(InputStream(
-    ['id','+','id']
-))
+inp = InputStream( ['id','+','id','+','id'] )
+out = lr.parse(inp)
 print( out )
+inp1 = InputStream( ['id','+','id','+','id'] )
+print( LR(g1).parse(inp1) )
+inp2 = InputStream( ['id','+','id','+','id'] )
+print( LR(g2).parse(inp2) )
