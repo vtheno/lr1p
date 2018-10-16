@@ -26,7 +26,11 @@ class Grammar(object):
         self.compute_nullable()
         self.compute_first() 
         self.compute_follow()
-
+        self.first_op = {}
+        self.last_op = {}
+        self.init_op_set()
+        self.compute_first_op()
+        self.compute_last_op()
     def calc(self):
         for left,right in self.R:
             value = [i for i in [left] if isinstance(i,Vn) and i not in self.Vn]
@@ -146,5 +150,97 @@ class Grammar(object):
                 if value and value != self.follow_set[x]:
                     self.follow_set[x] = value
                     changed = True
+
+    def init_op_set(self):
+        for lhs in self.Vn:
+            self.first_op[lhs] = [ ]
+            self.last_op[lhs] = [ ]
+
+    def first_op_point(self,lhs,rhs):
+        i,l,out = 0,len(rhs),[]
+        start = rhs[i]
+        if isinstance(start,Vt):
+            value = [i for i in [start] if i not in self.first_op[lhs]]
+            if value:
+                out += value
+        elif isinstance(start,Vn):
+            value = [i for i in [start] if i not in self.first_op[lhs]]
+            if value:
+                out += value
+            if i + 1 < l:
+                i += 1
+                start = rhs[i]
+                value = [i for i in [start] if i not in self.first_op[lhs]]
+                if value:
+                    out += value
+        return out
+
+    def compute_first_op(self):
+        changed = True
+        while changed:
+            changed = False
+            for lhs,rhs in self.R:
+                value = [i for i in self.first_op_point(lhs,rhs) if i not in self.first_op[lhs]]
+                if value:
+                    self.first_op[lhs] += value
+                    changed = True
+        changed = True
+        while changed:
+            changed = False
+            for lhs,ops in self.first_op.items():
+                for op in ops:
+                    if isinstance(op,Vn):
+                        value = [i for i in self.first_op[op] if i not in self.first_op[lhs] and i!=op]
+                        if value:
+                            value = [i for i in self.first_op[lhs] + value if i!=op]
+                            if value:
+                                self.first_op[lhs] = value
+                                changed = True
+        for lhs,ops in self.first_op.items():
+            self.first_op[lhs] = [i for i in self.first_op[lhs] if not isinstance(i,Vn)]
+
+    def last_op_point(self,lhs,rhs):
+        l,out = len(rhs),[]
+        i = l - 1
+        start = rhs[i]
+        if isinstance(start,Vt):
+            value = [i for i in [start] if i not in self.last_op[lhs]]
+            if value:
+                out += value
+        elif isinstance(start,Vn):
+            value = [i for i in [start] if i not in self.last_op[lhs]]
+            if value:
+                out += value
+            if i > 1:
+                i -= 1
+                start = rhs[i]
+                value = [i for i in [start] if i not in self.last_op[lhs]]
+                if value:
+                    out += value
+        return out
+
+    def compute_last_op(self):
+        changed = True
+        while changed:
+            changed = False
+            for lhs,rhs in self.R:
+                value = [i for i in self.last_op_point(lhs,rhs) if i not in self.last_op[lhs]]
+                if value:
+                    self.last_op[lhs] += value
+                    changed = True
+        changed = True
+        while changed:
+            changed = False
+            for lhs,ops in self.last_op.items():
+                for op in ops:
+                    if isinstance(op,Vn):
+                        value = [i for i in self.last_op[op] if i not in self.last_op[lhs] and i!=op]
+                        if value:
+                            value = [i for i in self.last_op[lhs] + value if i!=op]
+                            if value:
+                                self.last_op[lhs] = value
+                                changed = True
+        for lhs,ops in self.last_op.items():
+            self.last_op[lhs] = [i for i in self.last_op[lhs] if not isinstance(i,Vn)]        
 
 __all__ = ["Vn","Vt","bottom","eof","Grammar","rule"]

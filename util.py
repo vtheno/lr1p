@@ -50,7 +50,7 @@ class Symbol(type):
     def __new__(cls,name,bases,attrs):
         attrs["__name__"] = name
         attrs["__init__"] = lambda self,sym:setattr(self,"sym",sym)
-        attrs["__repr__"] = lambda self:f"{self.sym!r}:{self.__name__}"
+        attrs["__repr__"] = lambda self:f"{self.sym!r}({self.__name__})"
         return type.__new__(cls,name,bases,attrs)
 
 __all__ = ["call","define","Symbol","Stack"]
