@@ -105,20 +105,18 @@ class LR1(object):
                 (lhs,rhs) = n
                 length = len(rhs)
                 drop = list(reversed([stack.pop() for n in range(length * 2)]))
-                idx = self.g.R.index(n)
-                func = node[idx]
-                count = func.__code__.co_argcount
-                #temp = list(reversed(ast))
-                #head,tail = list(reversed(temp[:count])),temp[count:]
-                offset = len(ast)-count
-                ast,args = ast[0:offset],ast[offset:]
-                print( "idx =>",idx )
-                print( "args =>",args,func(*args) )
-                ast += [func(*args)]
                 state = stack.peek()
                 stack.push( lhs )
                 act,val = goto[state][lhs]
                 stack.push( val )
+                # ast 
+                idx = self.g.R.index(n)
+                func = node[idx]
+                count = func.__code__.co_argcount
+                offset = len(ast)-count
+                ast,args = ast[0:offset],ast[offset:]
+                print( "args =>",idx,args,func(*args) )
+                ast += [func(*args)]
             elif act == 'accept':
                 state = stack.pop ()
                 result = stack.pop ()
