@@ -8,11 +8,15 @@ from collections import namedtuple
 item = namedtuple('item',['lhs','rhs_l','rhs_r','la'])
 item.__repr__ = lambda self:f"{self.lhs} -> {' '.join([repr(i) for i in self.rhs_l])} . {' '.join([repr(i) for i in self.rhs_r])}  , {self.la}"
 
+class ParseError(Exception): pass
+
 class LR1(object):
-    def __init__(self,g:Grammar) -> 'LR1':
+    def __init__(self,g:Grammar,lex:Lexical) -> 'LR1':
         self.g = g
         self.start = [ item(self.g.S,[],self.g.R[0].rhs,eof) ]
-
+        self.action,self.goto = self.table(self.items())
+        self.stack = Stack()
+        self.lex = lex
     def closure(self, I : [item] ) -> [item]:
         I = I[:]
         changed = True
@@ -93,53 +97,57 @@ class LR1(object):
         #print( "val =>",val )
         return val
 
-    def parse (self, inp : ...,str2vt:'str -> Vt',node:['node']):
-        stack = Stack()
-        action,goto = self.table(self.items())
-        stack.push( 0 )
+    def parse (self, inp : str,str2vt:'str -> Vt',node:['node']):
+        #stack = Stack()
+        #action,goto = self.table(self.items())
+        self.stack.push( 0 )
+        inp = self.lex.lex(inp)
         current = self.next(inp)
-        ast =  AST()
+        ast = AST()
         while 1:
             token,out = str2vt(current)
-            state = stack.peek()
-            (act,idx) = action[state][token]
+            state = self.stack.peek()
+            value = self.action[state].get(token,None)#[token]
+            if value:
+                (act,idx) = value
+            else:
+                raise ParseError(f"{state} {token} !{self.lex.pos}! {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}")
             if not (out is None) and act == 'shift':
                 ast.push(out)
             if act == 'shift':
-                stack.push(token)
-                stack.push(idx)
+                self.stack.push(token)
+                self.stack.push(idx)
                 current = self.next(inp)
             elif act == 'reduce':
-                print( f"--------------- reduce {idx} ---------------" )
-                print( "stack =>",stack )
+                # print( f"--------------- reduce {idx} ---------------" ) # debug
+                # print( "self.stack =>",self.stack ) # debug
                 (lhs,rhs) = self.g.R[idx]
                 length = len(rhs)
-                drop = list(reversed([stack.pop() for _ in range(length * 2)]))
-                #print( "drop => ",drop,ast )
-                state = stack.peek()
-                stack.push( lhs )
-                act,val = goto[state][lhs]
-                stack.push( val )
+                drop = list(reversed([self.stack.pop() for _ in range(length * 2)]))
+                #print( "drop => ",drop,ast ) # debug
+                state = self.stack.peek()
+                self.stack.push( lhs )
+                act,val = self.goto[state][lhs]
+                self.stack.push( val )
                 # ast 
-                print( "stack =>",stack )
-                print( "ast =>",ast )
+                #print( "self.stack =>",self.stack ) # debug
+                #print( "ast =>",ast ) # debug
                 func = node[idx]
                 count = func.__code__.co_argcount
                 varnames = func.__code__.co_varnames
                 lctx = len(ast.ctx)
-                print( "lctx,lout,count =>",lctx,count,"idx:",idx)
+                #print( "lctx,lout,count =>",lctx,count,"idx:",idx) # debug
                 valn = ast.pop(count)
-                print( "valn =>",count,valn )
+                #print( "valn =>",count,valn ) # debug
                 ast.push(func(*valn))
-                print( "ast1 =>",ast )
-                print( f"---------------              ---------------" )
+                #print( "ast1 =>",ast ) # debug
+                #print( f"---------------              ---------------" ) # debug
             elif act == 'accept':
-                state = stack.pop ()
-                result = stack.pop ()
+                state = self.stack.pop ()
+                result = self.stack.pop ()
                 idx = 0
-                print( 'ast =>',ast )
                 return node[idx](*ast.ctx)
             else:
-                raise ValueError(f"{act}")
+                raise ParseError(f"{act} !{self.lex.pos}! {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}")
 
-__all__ = ["item","LR1"]
+__all__ = ["item","LR1","ParseError"]
