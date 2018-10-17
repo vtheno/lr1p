@@ -63,6 +63,7 @@ class LR1(object):
     def table (self, I : [item] ):
         action = [{} for i in I]
         goto   = [{} for i in I]
+        target = None
         for i in range(len(I)):
             for A in I[i]:
                 #print( "A =>",A,type(A.rhs_r[0]).__name__ if A.rhs_r else None)
@@ -70,10 +71,7 @@ class LR1(object):
                     X = A.rhs_r[0]
                     j = self.goto(I[i],X)
                     if j:
-                        #print("=>",j )
                         idx = I.index(j)
-                        #if idx in [5,6]:
-                        #print( "=>",i,X,idx )
                         if isinstance(X,Vt):
                             action[i][X] = ('shift',idx)
                         else:# isinstance(X,Vn):
@@ -81,7 +79,6 @@ class LR1(object):
                 elif A.rhs_l and A.rhs_r == [ ]:
                     R = rule(A.lhs,A.rhs_l)
                     idx = self.g.R.index(R)
-                    #print( "R =>",R,idx )
                     if A.lhs != self.g.S:
                         action[i][A.la] = ('reduce',idx)#rule(A.lhs,A.rhs_l) )
                     else:
@@ -96,7 +93,7 @@ class LR1(object):
         #print( "val =>",val )
         return val
 
-    def parse (self, inp : ...,str2vt:'str -> Vt',node:['node'])->'ast':
+    def parse (self, inp : ...,str2vt:'str -> Vt',node:['node']):
         stack = Stack()
         action,goto = self.table(self.items())
         stack.push( 0 )

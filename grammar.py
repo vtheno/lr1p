@@ -56,7 +56,7 @@ class Grammar(object):
                 self.first_set[x] = [ ]
                 self.follow_set[x] = [ ]
         self.follow_set[self.S] = [eof]
-        #self.follow_set[bottom] = [eof]
+
     def sum(self,lst:[[...]]):
         out = [ ]
         for i in lst:
@@ -107,7 +107,6 @@ class Grammar(object):
             changed = False
             for x in self.Vn:
                 value = self.sum([self.first_point(y) for X,y in self.R if X == x])
-                #print( x,"=>",value )
                 if value and value!= self.first_set[x]:
                     value = [i for i in value if i not in self.first_set[x]]
                     if value:

@@ -55,7 +55,7 @@ show( goto )
 print ( "----------------------------------------" )
 lex = Lexical([" ","\n","\t"],{}).lex
 inp = """
-1 * (2 + 3)
+1 * (2 + 3) * 4
 """
 inp = lex(inp)
 ast = lr1.parse(inp,str2vt,node)
