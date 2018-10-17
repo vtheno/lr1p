@@ -21,12 +21,12 @@ g = Grammar([
 ])
 node = [
     lambda s:{'prog':s},# S' -> S
-    lambda s,a: s + [a],# S -> S ; A
-    lambda a:[a],# S -> A
-    lambda e:e,# A -> E
-    lambda id,e:{'assgin':[id,e]}, # A -> id := E 
-    lambda e,id:{'add':[e,id]}, # E -> E + id 
-    lambda id:id, # E -> id
+    lambda s,a: {"s_SA":[s,a]},# S -> S ; A
+    lambda a:{"s_A":a},# S -> A
+    lambda e:{'a_A':e},# A -> E
+    lambda id,e:{'a_assgin':[id,e]}, # A -> id := E 
+    lambda e,id:{'e_add':[e,id]}, # E -> E + id 
+    lambda id:{'e_id':id}, # E -> id
     ]
 lr0 = LR1(g)
 from pprint import pprint
@@ -57,11 +57,9 @@ spectab = {
     ":" : ["="]
 }
 inp = """
+b := 3 + 4;
 a := 1 + 2;
-b := a + 3;
-c := b + 4;
-d := a + b + c;
-e
+b
 """
 def str2vt(s:str) -> Vt:
     if isinstance(s,str):

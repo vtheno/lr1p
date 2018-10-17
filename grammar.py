@@ -26,11 +26,7 @@ class Grammar(object):
         self.compute_nullable()
         self.compute_first() 
         self.compute_follow()
-        self.first_op = {}
-        self.last_op = {}
-        self.init_op_set()
-        self.compute_first_op()
-        self.compute_last_op()
+
     def calc(self):
         for left,right in self.R:
             value = [i for i in [left] if isinstance(i,Vn) and i not in self.Vn]
@@ -60,7 +56,7 @@ class Grammar(object):
                 self.first_set[x] = [ ]
                 self.follow_set[x] = [ ]
         self.follow_set[self.S] = [eof]
- 
+        #self.follow_set[bottom] = [eof]
     def sum(self,lst:[[...]]):
         out = [ ]
         for i in lst:
@@ -113,8 +109,10 @@ class Grammar(object):
                 value = self.sum([self.first_point(y) for X,y in self.R if X == x])
                 #print( x,"=>",value )
                 if value and value!= self.first_set[x]:
-                    self.first_set[x] = value
-                    changed = True
+                    value = [i for i in value if i not in self.first_set[x]]
+                    if value:
+                        self.first_set[x] += value
+                        changed = True
 
     def follow_point(self,x,name,lst:[...]):
         idx,l = lst.index(x),len(lst)
@@ -124,7 +122,7 @@ class Grammar(object):
             return [i for i in self.follow_set[name]]
         i,l = 0,len(lst)
         current = lst[i]
-        follow_x = [i for i in self.first_set[current] if i!= bottom]
+        follow_x = [eof if i==bottom else i for i in self.first_set[current]]
         changed = True
         while changed and i < l - 1 and self.nullable_set[current] :
             changed = False
@@ -135,10 +133,10 @@ class Grammar(object):
                 follow_x += value
                 changed = True
         else:
-            value = [i for i in self.follow_set[name] if i not in follow_x]
-            if value:
-                follow_x += value
-                changed = True
+            if self.nullable_set[current]:
+                value = [i for i in self.follow_set[name] if i not in follow_x]
+                if value:
+                    follow_x += value
         return follow_x
 
     def compute_follow(self):
@@ -147,100 +145,11 @@ class Grammar(object):
             changed = False
             for x in self.Vn:
                 value = self.sum([self.follow_point(x,lhs,rhs) for lhs,rhs in self.R if x in rhs])
+                #print( "value =>",x,value,self.follow_set[x] )
                 if value and value != self.follow_set[x]:
-                    self.follow_set[x] = value
-                    changed = True
-
-    def init_op_set(self):
-        for lhs in self.Vn:
-            self.first_op[lhs] = [ ]
-            self.last_op[lhs] = [ ]
-
-    def first_op_point(self,lhs,rhs):
-        i,l,out = 0,len(rhs),[]
-        start = rhs[i]
-        if isinstance(start,Vt):
-            value = [i for i in [start] if i not in self.first_op[lhs]]
-            if value:
-                out += value
-        elif isinstance(start,Vn):
-            value = [i for i in [start] if i not in self.first_op[lhs]]
-            if value:
-                out += value
-            if i + 1 < l:
-                i += 1
-                start = rhs[i]
-                value = [i for i in [start] if i not in self.first_op[lhs]]
-                if value:
-                    out += value
-        return out
-
-    def compute_first_op(self):
-        changed = True
-        while changed:
-            changed = False
-            for lhs,rhs in self.R:
-                value = [i for i in self.first_op_point(lhs,rhs) if i not in self.first_op[lhs]]
-                if value:
-                    self.first_op[lhs] += value
-                    changed = True
-        changed = True
-        while changed:
-            changed = False
-            for lhs,ops in self.first_op.items():
-                for op in ops:
-                    if isinstance(op,Vn):
-                        value = [i for i in self.first_op[op] if i not in self.first_op[lhs] and i!=op]
-                        if value:
-                            value = [i for i in self.first_op[lhs] + value if i!=op]
-                            if value:
-                                self.first_op[lhs] = value
-                                changed = True
-        for lhs,ops in self.first_op.items():
-            self.first_op[lhs] = [i for i in self.first_op[lhs] if not isinstance(i,Vn)]
-
-    def last_op_point(self,lhs,rhs):
-        l,out = len(rhs),[]
-        i = l - 1
-        start = rhs[i]
-        if isinstance(start,Vt):
-            value = [i for i in [start] if i not in self.last_op[lhs]]
-            if value:
-                out += value
-        elif isinstance(start,Vn):
-            value = [i for i in [start] if i not in self.last_op[lhs]]
-            if value:
-                out += value
-            if i > 1:
-                i -= 1
-                start = rhs[i]
-                value = [i for i in [start] if i not in self.last_op[lhs]]
-                if value:
-                    out += value
-        return out
-
-    def compute_last_op(self):
-        changed = True
-        while changed:
-            changed = False
-            for lhs,rhs in self.R:
-                value = [i for i in self.last_op_point(lhs,rhs) if i not in self.last_op[lhs]]
-                if value:
-                    self.last_op[lhs] += value
-                    changed = True
-        changed = True
-        while changed:
-            changed = False
-            for lhs,ops in self.last_op.items():
-                for op in ops:
-                    if isinstance(op,Vn):
-                        value = [i for i in self.last_op[op] if i not in self.last_op[lhs] and i!=op]
-                        if value:
-                            value = [i for i in self.last_op[lhs] + value if i!=op]
-                            if value:
-                                self.last_op[lhs] = value
-                                changed = True
-        for lhs,ops in self.last_op.items():
-            self.last_op[lhs] = [i for i in self.last_op[lhs] if not isinstance(i,Vn)]        
+                    value = [i for i in value if i not in self.follow_set[x]]
+                    if value:
+                        self.follow_set[x] += value
+                        changed = True
 
 __all__ = ["Vn","Vt","bottom","eof","Grammar","rule"]
