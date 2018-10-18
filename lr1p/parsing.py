@@ -1,22 +1,31 @@
 #coding=utf-8
-from util import *
-from lex import Lexical
-from grammar import *
+from lr1p.util import *
+from lr1p.lex import Lexical
+from lr1p.grammar import *
 
 from collections import namedtuple
+import threading
 
 item = namedtuple('item',['lhs','rhs_l','rhs_r','la'])
 item.__repr__ = lambda self:f"{self.lhs} -> {' '.join([repr(i) for i in self.rhs_l])} . {' '.join([repr(i) for i in self.rhs_r])}  , {self.la}"
 
 class ParseError(Exception): pass
+class table(object):
+    def __init__(self,l):
+        self.action = [{} for _ in range(l)]
+        self.goto = [{} for _ in range(l)]
+class container(object):
+    def __init__(self):
+        self.J = [ ]
 
 class LR1(object):
     def __init__(self,g:Grammar,lex:Lexical) -> 'LR1':
         self.g = g
         self.start = [ item(self.g.S,[],self.g.R[0].rhs,eof) ]
-        self.action,self.goto = self.table(self.items())
+        self.action_table,self.goto_table = self.table(self.items())
         self.stack = Stack()
         self.lex = lex
+
     def closure(self, I : [item] ) -> [item]:
         I = I[:]
         changed = True
@@ -26,9 +35,9 @@ class LR1(object):
                 X = it.rhs_r[0] if it.rhs_r else [ ]
                 tail = it.rhs_r[1:] 
                 tail = tail if tail else [eof]
-                head = [i for i in self.g.first_point(tail + [it.la]) if i!=bottom]
+                head = filter(lambda i:i!=bottom,self.g.first_point(tail + [it.la])) # don't change here
+                #[i for i in self.g.first_point(tail + [it.la]) if i!=bottom] what fuck?
                 #self.g.sum([self.g.first_point(tail) + self.g.first_point([it.la])])
-                #print("=>",head )
                 for lhs,rhs in self.g.R:
                     if X == lhs:
                         for b in head:
@@ -37,14 +46,13 @@ class LR1(object):
                                 I += [value]
                                 changed = True
         return I
-
     def goto(self, I:[item], X : Vt and  Vn):
-        J = [ ]
+        obj = container()
         for it in I:
-            if it.rhs_r:
-                if it.rhs_r[0] == X:
-                    _it = item(it.lhs,it.rhs_l + [it.rhs_r[0]],it.rhs_r[1:],it.la)
-                    J += [_it]
+            if it.rhs_r and it.rhs_r[0] == X:
+                _it = item(it.lhs,it.rhs_l + [it.rhs_r[0]],it.rhs_r[1:],it.la)
+                obj.J += [_it]
+        J = obj.J
         return self.closure(J)
 
     def items (self) -> [item] :
@@ -54,9 +62,7 @@ class LR1(object):
         while changed:
             changed = False
             for I in C:
-                N = self.g.Vn
-                V1 = self.g.Vt# + [bottom]
-                V = V1 + N
+                V = self.g.Vt + self.g.Vn
                 for x in V:
                     In = self.goto(I,x)
                     if In and In not in C:
@@ -64,30 +70,36 @@ class LR1(object):
                         changed = True
         return C
 
-    def table (self, I : [item] ):
-        action = [{} for i in I]
-        goto   = [{} for i in I]
-        target = None
-        for i in range(len(I)):
-            for A in I[i]:
-                #print( "A =>",A,type(A.rhs_r[0]).__name__ if A.rhs_r else None)
-                if A.rhs_r:
-                    X = A.rhs_r[0]
-                    j = self.goto(I[i],X)
-                    if j:
-                        idx = I.index(j)
-                        if isinstance(X,Vt):
-                            action[i][X] = ('shift',idx)
-                        else:# isinstance(X,Vn):
-                            goto[i][X] = ('shift',idx)
+    def table_point(self,I:[[item]],Ii : [item],i :int,obj:table):
+        for A in Ii:
+            if A.rhs_r:
+                X = A.rhs_r[0]
+                j = self.goto(I[i],X)
+                if j:
+                    idx = I.index(j)
+                    if isinstance(X,Vt):
+                        obj.action[i][X] = ('shift',idx)
+                    else:# isinstance(X,Vn):
+                        obj.goto[i][X] = ('shift',idx)
                 elif A.rhs_l and A.rhs_r == [ ]:
                     R = rule(A.lhs,A.rhs_l)
                     idx = self.g.R.index(R)
                     if A.lhs != self.g.S:
-                        action[i][A.la] = ('reduce',idx)#rule(A.lhs,A.rhs_l) )
+                        obj.action[i][A.la] = ('reduce',idx)#rule(A.lhs,A.rhs_l) )
                     else:
-                        action[i][eof] = ('accept',idx)#rule(A.lhs,A.rhs_l) )
-        return action,goto
+                        obj.action[i][eof] = ('accept',idx)#rule(A.lhs,A.rhs_l) )
+        return obj
+
+    def table (self, I : [[item]] ):
+        length_I = len(I)
+        obj = table(length_I)
+        if length_I > 50:
+            for i in range(length_I):
+                threading._start_new_thread(self.table_point,(I,I[i],i,obj))
+        else:
+            for i in range(length_I):
+                self.table_point(I,I[i],i,obj)
+        return obj.action,obj.goto
 
     def next (self,g : ... ):
         try:
@@ -107,7 +119,7 @@ class LR1(object):
         while 1:
             token,out = str2vt(current)
             state = self.stack.peek()
-            value = self.action[state].get(token,None)#[token]
+            value = self.action_table[state].get(token,None)#[token]
             if value:
                 (act,idx) = value
             else:
@@ -127,7 +139,7 @@ class LR1(object):
                 #print( "drop => ",drop,ast ) # debug
                 state = self.stack.peek()
                 self.stack.push( lhs )
-                act,val = self.goto[state][lhs]
+                act,val = self.goto_table[state][lhs]
                 self.stack.push( val )
                 # ast 
                 #print( "self.stack =>",self.stack ) # debug

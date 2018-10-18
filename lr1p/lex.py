@@ -66,12 +66,3 @@ class Lexical(object):
                 self.move()
                 yield out
 __all__ = ["Lexical"]
-"""
-skips = [" ","\n","\t"]
-spectab = {
-    ":":[":"],
-    "-":[">"],
-}
-lex = Lexical(skips,spectab)
-print( list( lex.lex("(a::b) : int * int -> int") ) )
-"""

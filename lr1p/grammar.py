@@ -1,6 +1,6 @@
 #coding=utf-8
 from collections import namedtuple
-from util import *
+from lr1p.util import *
 
 class Vn(metaclass=Symbol): pass 
 class Vt(metaclass=Symbol): pass 
@@ -25,7 +25,7 @@ class Grammar(object):
         self.init_set()
         self.compute_nullable()
         self.compute_first() 
-        self.compute_follow()
+        #self.compute_follow()
 
     def calc(self):
         for left,right in self.R:
@@ -95,7 +95,8 @@ class Grammar(object):
             changed = False
             i += 1
             current = lst[i]
-            value = [i for i in self.first_set[current] if i not in first_x]
+            value = list(filter(lambda i:i not in first_x,self.first_set[current]))
+            #[i for i in self.first_set[current] if i not in first_x]
             if value:
                 first_x += value
                 changed = True
@@ -108,7 +109,8 @@ class Grammar(object):
             for x in self.Vn:
                 value = self.sum([self.first_point(y) for X,y in self.R if X == x])
                 if value and value!= self.first_set[x]:
-                    value = [i for i in value if i not in self.first_set[x]]
+                    value = list(filter(lambda i:i not in self.first_set[x],value))
+                    #[i for i in value if i not in self.first_set[x]]
                     if value:
                         self.first_set[x] += value
                         changed = True

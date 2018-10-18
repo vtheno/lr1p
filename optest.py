@@ -1,10 +1,11 @@
 #coding=utf-8
-from grammar import *
-from parsing import *
-from lex import *
-from util import *
+from lr1p.grammar import *
+from lr1p.parsing import *
+from lr1p.lex import *
+from lr1p.util import *
 
 from pprint import pprint
+import time
 """
 Prog -> Expr
 Expr -> Expr + Term ;; Add
@@ -95,19 +96,15 @@ pprint( g.follow_set )
 #show( goto )
 print( "--------------------  parse   --------------------" )
 skips = [" ","\n","\t"]
-
 lex = Lexical(skips,spectab)
+from cProfile import Profile
+_t1 = time.perf_counter()
 lr1 = LR1(g,lex) 
-inp = """
-if 1 + 2
-then if it + it 
-     then it
-     else 0
-else let a = 2 + 3
-     in let b = a + 1
-        in a + b
-"""
-print( "started." )
+_t2 = time.perf_counter()
+print( "started.",_t2 - _t1 )
+prof = Profile()
+prof.runcall( lambda :LR1(g,lex) )
+prof.print_stats()
 while 1:
     inp = input('>> ')
     if inp == ':q':
