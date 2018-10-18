@@ -97,14 +97,14 @@ pprint( g.follow_set )
 print( "--------------------  parse   --------------------" )
 skips = [" ","\n","\t"]
 lex = Lexical(skips,spectab)
-from cProfile import Profile
+#from cProfile import Profile
 _t1 = time.perf_counter()
 lr1 = LR1(g,lex) 
 _t2 = time.perf_counter()
 print( "started.",_t2 - _t1 )
-prof = Profile()
-prof.runcall( lambda :LR1(g,lex) )
-prof.print_stats()
+#prof = Profile()
+#prof.runcall( lambda :LR1(g,lex) )
+#prof.print_stats()
 while 1:
     inp = input('>> ')
     if inp == ':q':

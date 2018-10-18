@@ -17,7 +17,10 @@ class table(object):
 class container(object):
     def __init__(self):
         self.J = [ ]
-
+def Filter(fn,args):
+    for i in args:
+        if fn(i):
+            yield i
 class LR1(object):
     def __init__(self,g:Grammar,lex:Lexical) -> 'LR1':
         self.g = g
@@ -35,9 +38,8 @@ class LR1(object):
                 X = it.rhs_r[0] if it.rhs_r else [ ]
                 tail = it.rhs_r[1:] 
                 tail = tail if tail else [eof]
-                head = filter(lambda i:i!=bottom,self.g.first_point(tail + [it.la])) # don't change here
+                head = Filter(lambda i:i!=bottom,self.g.first_point(tail + [it.la])) # don't change here
                 #[i for i in self.g.first_point(tail + [it.la]) if i!=bottom] what fuck?
-                #self.g.sum([self.g.first_point(tail) + self.g.first_point([it.la])])
                 for lhs,rhs in self.g.R:
                     if X == lhs:
                         for b in head:
@@ -46,7 +48,7 @@ class LR1(object):
                                 I += [value]
                                 changed = True
         return I
-    def goto(self, I:[item], X : Vt and  Vn):
+    def goto(self, I:[item], X : 'Vt + Vn'):
         obj = container()
         for it in I:
             if it.rhs_r and it.rhs_r[0] == X:
