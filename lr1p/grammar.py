@@ -19,6 +19,7 @@ class Grammar(object):
         self.Vt = [ ] # E terminator
         self.S = self.R[0][0]
         self.calc()
+        self.V = self.Vt + self.Vn
         self.first_set = {}
         self.follow_set = {}
         self.nullable_set = {}
@@ -47,8 +48,7 @@ class Grammar(object):
         self.nullable_set[eof] = True
         self.first_set[bottom] = [bottom]
         self.first_set[eof] = [eof]
-        V = self.Vn + self.Vt
-        for x in V:
+        for x in self.V:
             self.nullable_set[x] = False
             if isinstance(x,Vt):
                 self.first_set[x] = [x]
@@ -89,18 +89,18 @@ class Grammar(object):
     def first_point(self,lst:[...]):
         i,l = 0,len(lst)
         current = lst[i]
-        first_x = [i for i in self.first_set[current]]
+        first_x = self.first_set[current][:]
+        #[i for i in self.first_set[current]]
         changed = True
         while changed and i < l - 1 and self.nullable_set[current]:
             changed = False
             i += 1
             current = lst[i]
-            value = list(filter(lambda i:i not in first_x,self.first_set[current]))
-            #[i for i in self.first_set[current] if i not in first_x]
+            value = [i for i in self.first_set[current] if i not in first_x]
             if value:
                 first_x += value
                 changed = True
-        return first_x
+        return first_x#geniter(first_x)
 
     def compute_first(self):
         changed = True
@@ -109,7 +109,7 @@ class Grammar(object):
             for x in self.Vn:
                 value = self.sum([self.first_point(y) for X,y in self.R if X == x])
                 if value and value!= self.first_set[x]:
-                    value = list(filter(lambda i:i not in self.first_set[x],value))
+                    value = [i for i in value if i not in self.first_set[x]]
                     #[i for i in value if i not in self.first_set[x]]
                     if value:
                         self.first_set[x] += value

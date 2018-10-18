@@ -32,7 +32,6 @@ spectab = {
 }
 g = Grammar([
     rule(S,[E]),
-    rule(E,[E,add,T]),
     rule(E,[T]),
     rule(T,[T,T]),
     rule(T,[T,quote,T,quote,T]),
@@ -45,7 +44,6 @@ g = Grammar([
 ])
 node = [
     lambda e:{'s_prog':e},
-    lambda e,t:{'add':[e,t]},
     lambda t : t,
     lambda t1,t2:{'app':[t1,t2]},
     lambda t1,t2,t3:{"app":[t2,t1,t3]},
@@ -58,9 +56,7 @@ node = [
     ]
 def str2vt(s):
     if isinstance(s,str):
-        if s == '+':
-            return add,None
-        elif s == 'if':
+        if s == 'if':
             return IF,None
         elif s == 'then':
             return THEN,None
@@ -97,14 +93,15 @@ pprint( g.follow_set )
 print( "--------------------  parse   --------------------" )
 skips = [" ","\n","\t"]
 lex = Lexical(skips,spectab)
-#from cProfile import Profile
+from cProfile import Profile
 _t1 = time.perf_counter()
 lr1 = LR1(g,lex) 
 _t2 = time.perf_counter()
 print( "started.",_t2 - _t1 )
-#prof = Profile()
-#prof.runcall( lambda :LR1(g,lex) )
-#prof.print_stats()
+prof = Profile()
+prof.runcall( lambda : LR1(g,lex) )
+prof.print_stats()
+
 while 1:
     inp = input('>> ')
     if inp == ':q':

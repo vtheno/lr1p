@@ -71,4 +71,7 @@ class AST(object):
     def __repr__(self):
         return f"{self.ctx}"
 
-__all__ = ["call","define","Symbol","Stack","make","show","AST"]
+def geniter(value):
+    for x in value:
+        yield x
+__all__ = ["call","define","Symbol","Stack","make","show","AST","geniter"]

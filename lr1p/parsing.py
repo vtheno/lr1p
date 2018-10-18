@@ -10,27 +10,25 @@ item = namedtuple('item',['lhs','rhs_l','rhs_r','la'])
 item.__repr__ = lambda self:f"{self.lhs} -> {' '.join([repr(i) for i in self.rhs_l])} . {' '.join([repr(i) for i in self.rhs_r])}  , {self.la}"
 
 class ParseError(Exception): pass
-class table(object):
-    def __init__(self,l):
-        self.action = [{} for _ in range(l)]
-        self.goto = [{} for _ in range(l)]
-class container(object):
-    def __init__(self):
-        self.J = [ ]
+
 def Filter(fn,args):
     for i in args:
         if fn(i):
             yield i
+
 class LR1(object):
     def __init__(self,g:Grammar,lex:Lexical) -> 'LR1':
         self.g = g
-        self.start = [ item(self.g.S,[],self.g.R[0].rhs,eof) ]
-        self.action_table,self.goto_table = self.table(self.items())
+        self.start = (i for i in [item(self.g.S,[],self.g.R[0].rhs,eof)])
+        self.action_table = [ ]
+        self.goto_table = [ ]
+        self.items()
+        self.table()
         self.stack = Stack()
         self.lex = lex
 
     def closure(self, I : [item] ) -> [item]:
-        I = I[:]
+        I = [*I]
         changed = True
         while changed:
             changed = False
@@ -38,70 +36,68 @@ class LR1(object):
                 X = it.rhs_r[0] if it.rhs_r else [ ]
                 tail = it.rhs_r[1:] 
                 tail = tail if tail else [eof]
-                head = Filter(lambda i:i!=bottom,self.g.first_point(tail + [it.la])) # don't change here
-                #[i for i in self.g.first_point(tail + [it.la]) if i!=bottom] what fuck?
-                for lhs,rhs in self.g.R:
-                    if X == lhs:
-                        for b in head:
-                            value = item(lhs,[],rhs,b)
-                            if value not in I:
-                                I += [value]
-                                changed = True
+                for b in self.g.first_point(tail + [it.la]):
+                    if b!=bottom:
+                        for lhs,rhs in self.g.R:
+                            if X == lhs:
+                                value = item(lhs,[],rhs,b)
+                                if value not in I:
+                                    I += [value]
+                                    changed = True
         return I
-    def goto(self, I:[item], X : 'Vt + Vn'):
-        obj = container()
-        for it in I:
-            if it.rhs_r and it.rhs_r[0] == X:
-                _it = item(it.lhs,it.rhs_l + [it.rhs_r[0]],it.rhs_r[1:],it.la)
-                obj.J += [_it]
-        J = obj.J
-        return self.closure(J)
 
+    def goto(self, I:[item], X : 'Vt + Vn'):
+        return self.closure(item(it.lhs,it.rhs_l + [it.rhs_r[0]],it.rhs_r[1:],it.la) for it in I if it.rhs_r and it.rhs_r[0] == X)
     def items (self) -> [item] :
         I0 = self.closure( self.start )
-        C = [I0]
+        self.C = [I0]
+        self.targets = [{}]
         changed = True
         while changed:
             changed = False
-            for I in C:
-                V = self.g.Vt + self.g.Vn
-                for x in V:
-                    In = self.goto(I,x)
-                    if In and In not in C:
-                        C += [In]
+            for i,I in enumerate(self.C):
+                for X in self.g.V:
+                    In = self.goto(I,X)
+                    if In and In not in self.C:
+                        self.C += [In]
+                        self.targets += [{}]
+                        self.targets[i][X] = i + 1#C.index(In)
                         changed = True
-        return C
+                    if In in self.C:
+                        self.targets[i][X] = self.C.index(In)
+                    
 
-    def table_point(self,I:[[item]],Ii : [item],i :int,obj:table):
-        for A in Ii:
+    def table_point(self,i :int):
+        for A in self.C[i]:
             if A.rhs_r:
-                X = A.rhs_r[0]
-                j = self.goto(I[i],X)
-                if j:
-                    idx = I.index(j)
+                X  = A.rhs_r[0]
+                idx  = self.targets[i][X] #self.goto(I[i],X)
+                if idx:
+                    # idx = I.index(j)
+                    # print( "=>", idx,"<=>",self.targets[i].get(X,None) )
                     if isinstance(X,Vt):
-                        obj.action[i][X] = ('shift',idx)
+                        self.action_table[i][X] = ('shift',idx)
                     else:# isinstance(X,Vn):
-                        obj.goto[i][X] = ('shift',idx)
-                elif A.rhs_l and A.rhs_r == [ ]:
-                    R = rule(A.lhs,A.rhs_l)
-                    idx = self.g.R.index(R)
-                    if A.lhs != self.g.S:
-                        obj.action[i][A.la] = ('reduce',idx)#rule(A.lhs,A.rhs_l) )
-                    else:
-                        obj.action[i][eof] = ('accept',idx)#rule(A.lhs,A.rhs_l) )
-        return obj
+                        self.goto_table[i][X] = ('shift',idx)
+            elif A.rhs_l and A.rhs_r == [ ]:
+                R = rule(A.lhs,A.rhs_l)
+                idx = self.g.R.index(R)
+                if A.lhs != self.g.S:
+                    self.action_table[i][A.la] = ('reduce',idx)#rule(A.lhs,A.rhs_l) )
+                else:
+                    self.action_table[i][eof] = ('accept',idx)#rule(A.lhs,A.rhs_l) )
 
-    def table (self, I : [[item]] ):
-        length_I = len(I)
-        obj = table(length_I)
+    def table (self):
+        length_I = len(self.C)
+        self.action_table = [{} for _ in range(length_I)]
+        self.goto_table = [{} for _ in range(length_I)]
+        #print( len(self.targets),length_I )
         if length_I > 50:
             for i in range(length_I):
-                threading._start_new_thread(self.table_point,(I,I[i],i,obj))
+                threading._start_new_thread(self.table_point,(i,))
         else:
             for i in range(length_I):
-                self.table_point(I,I[i],i,obj)
-        return obj.action,obj.goto
+                self.table_point(i)
 
     def next (self,g : ... ):
         try:
@@ -112,8 +108,6 @@ class LR1(object):
         return val
 
     def parse (self, inp : str,str2vt:'str -> Vt',node:['node']):
-        #stack = Stack()
-        #action,goto = self.table(self.items())
         self.stack.push( 0 )
         inp = self.lex.lex(inp)
         current = self.next(inp)
@@ -125,7 +119,7 @@ class LR1(object):
             if value:
                 (act,idx) = value
             else:
-                raise ParseError(f"{state} {token} !{self.lex.pos}! {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}")
+                raise ParseError(f"{token} !{self.lex.pos}! {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}")
             if not (out is None) and act == 'shift':
                 ast.push(out)
             if act == 'shift':
@@ -137,7 +131,8 @@ class LR1(object):
                 # print( "self.stack =>",self.stack ) # debug
                 (lhs,rhs) = self.g.R[idx]
                 length = len(rhs)
-                drop = list(reversed([self.stack.pop() for _ in range(length * 2)]))
+                drop = [*reversed([self.stack.pop() for _ in range(length * 2)])]
+                # list(reversed([self.stack.pop() for _ in range(length * 2)]))
                 #print( "drop => ",drop,ast ) # debug
                 state = self.stack.peek()
                 self.stack.push( lhs )
@@ -162,6 +157,6 @@ class LR1(object):
                 idx = 0
                 return node[idx](*ast.ctx)
             else:
-                raise ParseError(f"{act} !{self.lex.pos}! {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}")
+                raise ParseError(f"!{self.lex.pos}! {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}")
 
 __all__ = ["item","LR1","ParseError"]

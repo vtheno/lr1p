@@ -1,8 +1,8 @@
 #coding=utf-8
-from grammar import *
-from parsing import *
-from lex import *
-from util import make,show
+from lr1p.grammar import *
+from lr1p.parsing import *
+from lr1p.lex import *
+from lr1p.util import make,show
 
 from pprint import pprint
 
@@ -34,19 +34,19 @@ pprint(g.first_set)
 print ( "----------------------------------------" )
 pprint(g.follow_set)
 print ( "----------------------------------------" )
-lr1 = LR1(g)
-
-items = lr1.items()
-act,goto = lr1.table(items)
-show( act )
+lex = Lexical([" ","\n","\t"],{})
+lr1 = LR1(g,lex)
+print( "=> target" )
+show( lr1.targets )
 print ( "----------------------------------------" )
-show( goto )
+show( lr1.action_table )
 print ( "----------------------------------------" )
-lex = Lexical([" ","\n","\t"],{}).lex
+show( lr1.goto_table )
+print ( "----------------------------------------" )
 
 inp = """
 c d d
 """
-inp = lex(inp)
 ast = lr1.parse(inp,str2vt,node)
 pprint( ast )
+
