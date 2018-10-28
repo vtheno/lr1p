@@ -78,9 +78,16 @@ def factor(lparent:Vt,expr:Vn,rparent:Vt)->Vn:
     factor -> ( expr )
     """
     return expr
+@parse.add_rule
+def factor(IF:Vt,expr_1:Vn,then:Vt,expr_2:Vn,Else:Vt,expr_3:Vn)->Vn:
+    """
+    factor -> if expr then expr else expr
+    """
+    return {"if":[expr_1,expr_2,expr_3]}
 parse = parse.build(lex)
 print(parse("2 * (1 + 3) / 2"))
 print(parse("2 * 1 + 3 / 2"))
+print(parse("b +if a then 1 else 2"))
 # output: 
 # {'program': {'mul': [{'num': 2}, {'div': [{'add': [{'num': 1}, {'num': 3}]}, {'num': 2}]}]}}
 # {'program': {'add': [{'mul': [{'num': 2}, {'num': 1}]}, {'div': [{'num': 3}, {'num': 2}]}]}}

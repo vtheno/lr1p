@@ -92,12 +92,12 @@ class LR1(object):
         self.action_table = [{} for _ in range(length_I)]
         self.goto_table = [{} for _ in range(length_I)]
         #print( len(self.targets),length_I )
-        if length_I > 50:
-            for i in range(length_I):
-                threading._start_new_thread(self.table_point,(i,))
-        else:
-            for i in range(length_I):
-                self.table_point(i)
+        #if length_I > 50:
+        #    for i in range(length_I):
+        #        threading._start_new_thread(self.table_point,(i,))
+        #else:
+        for i in range(length_I):
+            self.table_point(i)
 
     def next (self,g : ... ):
         try:
