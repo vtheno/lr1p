@@ -60,7 +60,7 @@ def show(x):
     for i,v in enumerate(x):
         print( f"{i} => {v}" )
 
-class AST(object):
+class ASTStack(object):
     def __init__(self):
         self.ctx = [ ]
     def push(self,val):
@@ -71,7 +71,4 @@ class AST(object):
     def __repr__(self):
         return f"{self.ctx}"
 
-def geniter(value):
-    for x in value:
-        yield x
-__all__ = ["call","define","Symbol","Stack","make","show","AST","geniter"]
+__all__ = ["call","define","Symbol","Stack","make","show","ASTStack"]

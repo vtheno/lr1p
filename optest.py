@@ -27,9 +27,6 @@ IF,THEN,ELSE = make(Vt,"if","then","else")
 LET,IN,assgin = make(Vt,"let","in","=")
 FN,AS = make(Vt,"fn","=>")
 quote = Vt("`")
-spectab = {
-    "=":[">"],
-}
 g = Grammar([
     rule(S,[E]),
     rule(E,[T]),
@@ -92,7 +89,7 @@ pprint( g.follow_set )
 #show( goto )
 print( "--------------------  parse   --------------------" )
 skips = [" ","\n","\t"]
-lex = Lexical(skips,spectab)
+lex = Lexical(skips)
 from cProfile import Profile
 _t1 = time.perf_counter()
 lr1 = LR1(g,lex) 

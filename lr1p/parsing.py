@@ -111,7 +111,7 @@ class LR1(object):
         self.stack.push( 0 )
         inp = self.lex.lex(inp)
         current = self.next(inp)
-        ast = AST()
+        ast = ASTStack()
         while 1:
             token,out = str2vt(current)
             state = self.stack.peek()
@@ -127,8 +127,8 @@ class LR1(object):
                 self.stack.push(idx)
                 current = self.next(inp)
             elif act == 'reduce':
-                # print( f"--------------- reduce {idx} ---------------" ) # debug
-                # print( "self.stack =>",self.stack ) # debug
+                #print( f"--------------- reduce {idx} ---------------" ) # debug
+                #print( "self.stack =>",self.stack ) # debug
                 (lhs,rhs) = self.g.R[idx]
                 length = len(rhs)
                 drop = [*reversed([self.stack.pop() for _ in range(length * 2)])]
