@@ -5,15 +5,16 @@ from lr1p.util import *
 from types import FunctionType
 
 class parser(object):
-    def __init__(self):
+    def __init__(self,sym2sym,default_ident="id"):
         self.rules = [ ]
         self.node = [ ]
         self.maps = {}
         self.V = [ ]
+        self.sym2sym = sym2sym
+        self.default_ident = default_ident
     def general_str2vt(self,s):
         if isinstance(s,str):
-            val = self.maps.get(s,self.get_V('id'))
-            #print( "val =>",val)
+            val = self.maps.get(s,self.get_V(self.default_ident))
             return val,s
         return s,None
     def add_rule(self,fn):
@@ -23,10 +24,10 @@ class parser(object):
         argcount = fn.__code__.co_argcount
         varnames = fn.__code__.co_varnames[:]
         argnames = [varnames[i].lower() for i in range(argcount)]
-        argnames = [k if k.split("_")== 1 else k.split("_")[0] for k in argnames]
+        argnames = [self.sym2sym(k) for k in argnames]
         if length == argcount + 1:
             annotations[name] = annotations.pop("return")
-            env = {k if k.split("_")== 1 else k.split("_")[0]:v for k,v in annotations.items()}
+            env = {self.sym2sym(k):v for k,v in annotations.items()}
             self.maps.update( env )
             r = (name,argnames)
             self.rules += [r]

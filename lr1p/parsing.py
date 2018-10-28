@@ -119,7 +119,10 @@ class LR1(object):
             if value:
                 (act,idx) = value
             else:
-                raise ParseError(f"{token} !{self.lex.pos}! {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}")
+                raise ParseError(f"""
+position: {self.lex.pos}
+token: {current} : {token}
+input: {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}""")
             if not (out is None) and act == 'shift':
                 ast.push(out)
             if act == 'shift':
@@ -157,6 +160,9 @@ class LR1(object):
                 idx = 0
                 return node[idx](*ast.ctx)
             else:
-                raise ParseError(f"!{self.lex.pos}! {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}")
+                raise ParseError(f"""
+position: {self.lex.pos}
+token: {current} : {token}
+input: {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}""")
 
 __all__ = ["item","LR1","ParseError"]
