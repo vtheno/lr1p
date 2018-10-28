@@ -146,7 +146,6 @@ input: {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}""")
                 #print( "ast =>",ast ) # debug
                 func = node[idx]
                 count = func.__code__.co_argcount
-                varnames = func.__code__.co_varnames
                 lctx = len(ast.ctx)
                 #print( "lctx,lout,count =>",lctx,count,"idx:",idx) # debug
                 valn = ast.pop(count)
