@@ -34,7 +34,7 @@ class parser(object):
             self.node  += [fn]
             return fn
         else:
-            raise TypeError("def type error")
+            raise TypeError("def rule format error")
     def compute_V(self):
         for k,v in self.maps.items():
             sym = k
@@ -62,6 +62,10 @@ class parser(object):
                 self.maps[k] = val
     def build(self,lex):
         self.compute_V()
+        if self.default_ident not in [i.sym for i in self.V if isinstance(i,Vt)]:
+            raise TypeError(f"please in rule add the {self.default_ident}")
+        if not self.maps or not self.rules:
+            raise TypeError(f"please add some rule for parser")
         #print( self.maps )
         self.compute_maps()
         #print(self.rules)
