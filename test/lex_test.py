@@ -2,7 +2,7 @@
 from lr1p.lex import *
 from lr1p.parser import parser
 from lr1p.grammar import Vn,Vt
-lex = Lexical([" ","\r","\t","\n"])
+lex = Lexical([" ","\r","\t","\n"],{})
 def sym2sym(s):
     """
     process python argname to string

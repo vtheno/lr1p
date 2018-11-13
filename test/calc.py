@@ -3,7 +3,7 @@ from lr1p.parser import parser
 from lr1p.grammar import Vt,Vn
 from lr1p.lex import Lexical
 skips = [" ","\n","\t"]
-lex = Lexical(skips)
+lex = Lexical(skips,{})
 def sym2sym(s):
     if s == "lparent":
         return "("
@@ -87,7 +87,7 @@ def factor(IF:Vt,expr_1:Vn,then:Vt,expr_2:Vn,Else:Vt,expr_3:Vn)->Vn:
 parse = parse.build(lex)
 print(parse("2 * (1 + 3) / 2"))
 print(parse("2 * 1 + 3 / 2"))
-print(parse("b +if a then 1 else 2"))
+print(parse("b + if a then 1 else 2"))
 # output: 
 # {'program': {'mul': [{'num': 2}, {'div': [{'add': [{'num': 1}, {'num': 3}]}, {'num': 2}]}]}}
 # {'program': {'add': [{'mul': [{'num': 2}, {'num': 1}]}, {'div': [{'num': 3}, {'num': 2}]}]}}

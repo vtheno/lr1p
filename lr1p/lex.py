@@ -1,7 +1,8 @@
 #coding=utf-8
 class Lexical(object):
-    def __init__(self,skips):
+    def __init__(self,skips,spectab:{str:[str]}):
         self.skips = skips
+        self.spectab = spectab
         self.inp = None
         self.pos = 0
     def move(self):
@@ -23,11 +24,17 @@ class Lexical(object):
         if temp:
             return temp,inp
     def ops(self,inp):
-        temp = ''
-        while inp and inp[0] in """`!@#$%^&?{}[]_"'~<>+-*/|\,.:;()=""":
-            temp += inp[0]
-            inp = inp[1:]
-            self.move()
+        temp = '' + inp[0]
+        inp = inp[1:]
+        self.move()
+        symbols = self.spectab.get(temp)
+        while inp and symbols:
+            if inp[0] in symbols:
+                temp += inp[0]
+                inp = inp[1:]
+                self.move()
+            else:
+                break
         if temp:
             return temp,inp
     def lex(self,inp): # todo add position
