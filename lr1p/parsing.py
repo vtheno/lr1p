@@ -165,3 +165,4 @@ token: {current} : {token}
 input: {self.lex.inp[:self.lex.pos]} {self.lex.inp[self.lex.pos:]}""")
 
 __all__ = ["item","LR1","ParseError"]
+
