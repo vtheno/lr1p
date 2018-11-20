@@ -6,7 +6,7 @@
        from lr1p.grammar import Vt,Vn
        from lr1p.lex import Lexical
        skips = [" ","\n","\t"]
-       lex = Lexical(skips)
+       lex = Lexical(skips,{})
        def sym2sym(s):
            if s == "lparent":
                return "("
