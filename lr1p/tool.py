@@ -56,6 +56,7 @@ def vzip( lst1 , lst2 ):
             yield next(l1),next(l2)
         except StopIteration:
             break
+
 def enum ( l : list ) -> zip:
     return zip(inf(step=1),l)
 
@@ -65,7 +66,33 @@ def chunks (l:list,n:int) -> list:
 def unchunks (l:[list]) -> list:
     return [i for j in l for i in j]
 
+class data(type):
+    def __new__(cls,name,bases,attrs,**kws):
+        init = "__init__"
+        show = "__repr__"
+        changed_init = kws.get("init")
+        changed_show = kws.get("show")
+        if changed_init:
+            init = changed_init
+        if changed_show:
+            show = changed_show
+        attrs["__name__"] = name
+        if bases != ():
+            have_show_function = attrs.get(show)
+            if have_show_function:
+                attrs["__repr__"] = have_show_function
+            else:
+                attrs["__repr__"] = lambda self: self.__name__
+            have_construct_function = attrs.get(init)
+            if have_construct_function:
+                attrs["__init__"] = have_construct_function
+                return type.__new__(cls, name, bases, attrs)
+            return type.__new__(cls, name, bases, attrs)()
+        return type.__new__(cls, name, bases,attrs)
+
 __all__ = ["inf","alpha","inf_map","inf_filter","inf_zip","inf_take",
            "vzip","enum",
-           "chunks","unchunks"]
+           "chunks","unchunks",
+           "data",
+]
 

@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(  
     name = "lr1p", 
-    version = "1.0", 
+    version = "1.0.1", 
     keywords = ("parsing",), 
     description = "light lr1 parsing", 
     long_description = "light lr1 parsing",
