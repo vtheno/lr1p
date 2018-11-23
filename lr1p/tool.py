@@ -1,10 +1,10 @@
 #coding=utf-8
-def inf(stop=None,step=1,start=0):
+def inf (stop=None,step=1,start=0):
     n = start
     while stop is None or n < stop:
         yield n
         n += step
-def alpha(stop=None,step=1,start=0,Format=lambda n:f'alpha{n}'):
+def alpha (stop=None,step=1,start=0,Format=lambda n:f'alpha{n}'):
     n = start
     while stop is None or n < stop:
         yield Format(n)
@@ -37,7 +37,7 @@ def inf_zip (inf1,inf2):
             yield next(inf1),next(inf2)
         except StopIteration:
             break
-def inf_take(inf,n:int):
+def inf_take (inf,n:int):
     while n:
         yield next(inf)
         n-=1
@@ -58,16 +58,16 @@ def vzip( lst1 , lst2 ):
             break
 
 def enum ( l : list ) -> zip:
-    return zip(inf(step=1),l)
+    return zip ( inf(step=1),l)
 
 def chunks (l:list,n:int) -> list:
-    return [l[i:i+n] for i,_ in zip(inf(step=n),l) if l[i:i+n] != [] ]
+    return [l[i:i+n] for i,_ in zip (inf (step=n),l) if l[i:i+n] != [] ]
 
 def unchunks (l:[list]) -> list:
     return [i for j in l for i in j]
 
-class data(type):
-    def __new__(cls,name,bases,attrs,**kws):
+class data (type):
+    def __new__ (cls,name,bases,attrs,**kws):
         init = "__init__"
         show = "__repr__"
         changed_init = kws.get("init")
@@ -78,17 +78,17 @@ class data(type):
             show = changed_show
         attrs["__name__"] = name
         if bases != ():
-            have_show_function = attrs.get(show)
+            have_show_function = attrs.get (show)
             if have_show_function:
                 attrs["__repr__"] = have_show_function
             else:
                 attrs["__repr__"] = lambda self: self.__name__
-            have_construct_function = attrs.get(init)
+            have_construct_function = attrs.get (init)
             if have_construct_function:
                 attrs["__init__"] = have_construct_function
-                return type.__new__(cls, name, bases, attrs)
-            return type.__new__(cls, name, bases, attrs)()
-        return type.__new__(cls, name, bases,attrs)
+                return type.__new__ (cls, name, bases, attrs)
+            return type.__new__ (cls, name, bases, attrs)()
+        return type.__new__ (cls, name, bases,attrs)
 
 __all__ = ["inf","alpha","inf_map","inf_filter","inf_zip","inf_take",
            "vzip","enum",
